@@ -44,10 +44,10 @@ class DB {
     const values = [JSON.stringify(pending_getByUUID), JSON.stringify(pending_queryJsonPath)];
     const name = "fetchbatch";
     const text = `\
-SELECT null AS index, id, (SELECT object FROM items WHERE items.id = ids.id::uuid) AS object
+SELECT null AS index, id, (SELECT object FROM items WHERE items.id = ids.id::uuid AND allowed @@ '$.view[*] == "system.Everyone"') AS object
 FROM jsonb_array_elements_text($1::jsonb) AS ids(id)
 UNION ALL
-SELECT index - 1, null AS id, COALESCE((SELECT jsonb_agg(id) FROM items WHERE object @@ query::jsonpath), '[]'::jsonb) AS object
+SELECT index - 1, null AS id, COALESCE((SELECT jsonb_agg(id) FROM items WHERE object @@ query::jsonpath AND allowed @@ '$.view[*] == "system.Everyone"'), '[]'::jsonb) AS object
 FROM jsonb_array_elements_text($2::jsonb) WITH ORDINALITY queries(query, index)
 ;`;
     const result = await this.client.query({ name, text, values });
